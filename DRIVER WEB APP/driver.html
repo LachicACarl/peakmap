@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PeakMapPH – Driver Panel</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .card {
+      background: white;
+      border-radius: 15px;
+      padding: 40px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      color: #2c3e50;
+      font-size: 32px;
+      margin-bottom: 10px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #7f8c8d;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .info-section {
+      background: #ecf0f1;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 25px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #bdc3c7;
+    }
+
+    .info-row:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: #7f8c8d;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .info-value {
+      color: #2c3e50;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .bus-id-badge {
+      background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 16px;
+    }
+
+    .count-badge {
+      background: #e74c3c;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 18px;
+    }
+
+    .location {
+      font-size: 12px;
+      color: #95a5a6;
+      word-break: break-all;
+    }
+
+    .send-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+      color: white;
+      border: none;
+      padding: 18px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+      margin-bottom: 15px;
+    }
+
+    .send-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(46, 204, 113, 0.6);
+    }
+
+    .send-btn:active {
+      transform: translateY(0);
+    }
+
+    .send-btn:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .status {
+      text-align: center;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      display: block;
+    }
+
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      display: block;
+    }
+
+    .status.sending {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+      display: block;
+    }
+
+    .auto-update {
+      background: #fff3cd;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #ffc107;
+    }
+
+    .auto-update-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .auto-update-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #856404;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+      background: #ccc;
+      border-radius: 13px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .toggle-switch.active {
+      background: #2ecc71;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+
+    .toggle-switch.active .toggle-slider {
+      transform: translateX(24px);
+    }
+
+    .auto-update-text {
+      font-size: 12px;
+      color: #856404;
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    @media (max-width: 576px) {
+      .card {
+        padding: 25px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .send-btn {
+        font-size: 16px;
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🚍 Driver Panel</h1>
+      <p class="subtitle">Send real-time bus data to passengers</p>
+
+      <div class="auto-update">
+        <div class="auto-update-header">
+          <span class="auto-update-title">Auto-Send Data</span>
+          <div class="toggle-switch" id="autoToggle" onclick="toggleAutoSend()">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+        <p class="auto-update-text" id="autoText">Manual mode - Click button to send</p>
+      </div>
+
+      <div class="info-section">
+        <div class="info-row">
+          <span class="info-label">Bus ID</span>
+          <span class="bus-id-badge">EDSA-01</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Passenger Count</span>
+          <span class="count-badge" id="passengerCount">0</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Route</span>
+          <select id="routeSelect" style="padding: 8px; border-radius: 5px; border: 2px solid #bdc3c7; font-size: 14px;">
+            <option value="EDSA Route">EDSA Route</option>
+            <option value="Commonwealth Avenue">Commonwealth Avenue</option>
+            <option value="Katipunan Avenue">Katipunan Avenue</option>
+            <option value="España Boulevard">España Boulevard</option>
+          </select>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Destination</span>
+          <select id="destinationSelect" style="padding: 8px; border-radius: 5px; border: 2px solid #bdc3c7; font-size: 14px;">
+            <option value="Quezon City">Quezon City</option>
+            <option value="Makati City">Makati City</option>
+            <option value="Manila">Manila</option>
+            <option value="Pasig City">Pasig City</option>
+            <option value="Taguig City">Taguig City</option>
+          </select>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Location</span>
+          <span class="info-value location" id="location">Getting location...</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Last Update</span>
+          <span class="info-value" id="lastUpdate">Never</span>
+        </div>
+      </div>
+
+      <button class="send-btn" onclick="sendData()" id="sendBtn">
+        📡 Send Bus Data
+      </button>
+
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <script>
+    let count = 0;
+    let autoSendEnabled = false;
+    let autoSendInterval = null;
+    let currentPosition = null;
+
+    // SIMULATED count (ESP32 will replace this)
+    setInterval(() => {
+      count++;
+      document.getElementById('passengerCount').textContent = count;
+    }, 7000);
+
+    // Get location on load and update periodically
+    function updateLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            currentPosition = pos;
+            const locText = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+            document.getElementById('location').textContent = locText;
+          },
+          (error) => {
+            document.getElementById('location').textContent = 'Location unavailable';
+            console.error('Location error:', error);
+          }
+        );
+      } else {
+        document.getElementById('location').textContent = 'Geolocation not supported';
+      }
+    }
+
+    function toggleAutoSend() {
+      autoSendEnabled = !autoSendEnabled;
+      const toggle = document.getElementById('autoToggle');
+      const text = document.getElementById('autoText');
+      const btn = document.getElementById('sendBtn');
+
+      if (autoSendEnabled) {
+        toggle.classList.add('active');
+        text.textContent = 'Sending data every 10 seconds';
+        btn.disabled = true;
+        btn.textContent = '🔄 Auto-Sending...';
+        autoSendInterval = setInterval(sendData, 10000);
+        sendData(); // Send immediately when enabled
+      } else {
+        toggle.classList.remove('active');
+        text.textContent = 'Manual mode - Click button to send';
+        btn.disabled = false;
+        btn.textContent = '📡 Send Bus Data';
+        if (autoSendInterval) {
+          clearInterval(autoSendInterval);
+          autoSendInterval = null;
+        }
+      }
+    }
+
+    function showStatus(message, type) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = 'status ' + type;
+      
+      if (type !== 'sending') {
+        setTimeout(() => {
+          statusEl.className = 'status';
+        }, 5000);
+      }
+    }
+
+    function sendData() {
+      const statusEl = document.getElementById('status');
+      const btn = document.getElementById('sendBtn');
+      
+      if (!autoSendEnabled) {
+        btn.disabled = true;
+        btn.textContent = '📤 Sending...';
+      }
+      
+      showStatus('📤 Sending data...', 'sending');
+
+      if (!currentPosition) {
+        updateLocation();
+        setTimeout(sendData, 1000);
+        return;
+      }
+
+      fetch("http://localhost:8000/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bus_id: "EDSA-01",
+          count: count,
+          lat: currentPosition.coords.latitude,
+          lng: currentPosition.coords.longitude,
+          route: document.getElementById('routeSelect').value,
+          destination: document.getElementById('destinationSelect').value
+        })
+      })
+      .then(res => res.json())
+      .then(() => {
+        showStatus('✅ Data sent successfully!', 'success');
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        if (!autoSendEnabled) {
+          btn.disabled = false;
+          btn.textContent = '📡 Send Bus Data';
+        }
+      })
+      .catch(error => {
+        showStatus('❌ Failed to send data. Check if server is running.', 'error');
+        console.error('Error:', error);
+        if (!autoSendEnabled) {
+          btn.disabled = false;
+          btn.textContent = '📡 Send Bus Data';
+        }
+      });
+    }
+
+    // Initialize
+    updateLocation();
+    setInterval(updateLocation, 30000); // Update location every 30 seconds
+  </script>
+</body>
+</html>

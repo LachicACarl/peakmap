@@ -1,0 +1,21 @@
+from datetime import datetime
+
+buses = {}
+
+@app.post("/update")
+def update_bus(data: dict):
+    level = classify(data["count"])
+    buses[data["bus_id"]] = {
+        "bus_id": data["bus_id"],
+        "count": data["count"],
+        "lat": data["lat"],
+        "lng": data["lng"],
+        "crowd_level": level,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    return buses[data["bus_id"]]
+
+@app.get("/buses")
+def get_buses():
+    return list(buses.values())
+

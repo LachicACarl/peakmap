@@ -1,0 +1,9 @@
+frontend/
+ ├── admin/
+ │    └── admin.html
+ ├── driver/
+ │    └── driver.html
+ ├── passenger/
+ │    └── passenger.html
+backend/
+ └── main.py (FastAPI)

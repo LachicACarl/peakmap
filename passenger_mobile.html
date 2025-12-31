@@ -1,0 +1,2273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>PeakMapPH – Passenger</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Header - Fixed */
+    .top-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      padding-top: max(15px, env(safe-area-inset-top));
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .app-title {
+      font-size: 20px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .balance-display {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .profile-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.3s ease;
+    }
+
+    .profile-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Route Info Card */
+    .route-card {
+      background: white;
+      margin: 80px 15px 15px;
+      border-radius: 15px;
+      padding: 15px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      display: none;
+    }
+
+    .route-card.active {
+      display: block;
+    }
+
+    .route-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .route-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .route-badge {
+      background: #667eea;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .route-details {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+
+    .route-detail-item {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .eta-banner {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 80px;
+    }
+
+    .main-content.with-route {
+      margin-top: 0;
+    }
+
+    .main-content.no-route {
+      margin-top: 70px;
+    }
+
+    /* Stats Section */
+    .stats-section {
+      padding: 15px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .stat-item {
+      background: white;
+      padding: 12px 8px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .stat-value.green { color: #2ecc71; }
+    .stat-value.orange { color: #f39c12; }
+    .stat-value.red { color: #e74c3c; }
+    .stat-value.purple { color: #764ba2; }
+
+    .stat-label {
+      font-size: 10px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Bus Cards */
+    .buses-section {
+      padding: 0 15px 15px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 12px;
+      padding: 0 5px;
+    }
+
+    .bus-card {
+      background: white;
+      border-radius: 15px;
+      padding: 18px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .bus-card:active {
+      transform: scale(0.98);
+    }
+
+    .bus-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .bus-id {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .status-badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-badge.LOW {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-badge.MODERATE {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status-badge.HIGH {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .bus-info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .info-cell {
+      text-align: center;
+    }
+
+    .info-icon {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 2px;
+    }
+
+    .info-label {
+      font-size: 11px;
+      color: #999;
+      text-transform: uppercase;
+    }
+
+    .capacity-bar {
+      height: 6px;
+      background: #f0f0f0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .capacity-fill {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.5s ease;
+    }
+
+    .capacity-fill.LOW { background: linear-gradient(90deg, #2ecc71, #27ae60); }
+    .capacity-fill.MODERATE { background: linear-gradient(90deg, #f39c12, #e67e22); }
+    .capacity-fill.HIGH { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+
+    .bus-eta {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+
+    .bus-eta-time {
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #e0e0e0;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding-bottom: env(safe-area-inset-bottom);
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+      z-index: 100;
+    }
+
+    .nav-item {
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      background: none;
+    }
+
+    .nav-item:active {
+      background: #f8f9fa;
+    }
+
+    .nav-item.active {
+      color: #667eea;
+    }
+
+    .nav-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #666;
+    }
+
+    .nav-item.active .nav-label {
+      color: #667eea;
+      font-weight: bold;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal.active {
+      display: flex;
+      align-items: flex-end;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s ease;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 10;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .close-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #f0f0f0;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      color: #666;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: border 0.3s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .payment-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .payment-option {
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .payment-option:active {
+      transform: scale(0.95);
+    }
+
+    .payment-option.selected {
+      border-color: #667eea;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    }
+
+    .payment-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+
+    .payment-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 10px;
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-text {
+      font-size: 16px;
+      color: #999;
+    }
+
+    .profile-section {
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 36px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 15px;
+    }
+
+    .profile-name {
+      font-size: 22px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .profile-email {
+      font-size: 14px;
+      color: #999;
+      margin-bottom: 20px;
+    }
+
+    .menu-list {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+
+    .menu-item {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-item:active {
+      background: #f8f9fa;
+    }
+
+    .menu-item-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .menu-icon {
+      font-size: 20px;
+      width: 24px;
+    }
+
+    .menu-text {
+      font-size: 15px;
+      color: #333;
+    }
+
+    .menu-value {
+      font-size: 13px;
+      color: #999;
+    }
+
+    .logout-btn {
+      width: calc(100% - 40px);
+      margin: 0 20px 20px;
+      padding: 16px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .logout-btn:active {
+      transform: scale(0.98);
+    }
+
+    .route-list {
+      padding: 0;
+    }
+
+    .route-item {
+      padding: 18px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .route-item:last-child {
+      border-bottom: none;
+    }
+
+    .route-item:active {
+      background: #f8f9fa;
+    }
+
+    .route-item-icon {
+      font-size: 32px;
+      flex-shrink: 0;
+    }
+
+    .route-item-content {
+      flex: 1;
+    }
+
+    .route-item-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .route-item-desc {
+      font-size: 13px;
+      color: #999;
+    }
+
+    .route-item-arrow {
+      font-size: 20px;
+      color: #ccc;
+      flex-shrink: 0;
+    }
+
+    /* Payment Confirmation Modal */
+    .payment-confirmation {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .payment-summary {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .summary-row:last-child {
+      margin-bottom: 0;
+      padding-top: 10px;
+      border-top: 2px solid #dee2e6;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .balance-info {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .balance-label {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-bottom: 5px;
+    }
+
+    .balance-amount {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .topup-btn {
+      width: 100%;
+      padding: 12px;
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .topup-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* QR Scan Waiting Modal */
+    .scan-waiting {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .scan-animation {
+      font-size: 80px;
+      margin: 20px 0;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+
+    .scan-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .scan-subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    /* Login Page */
+    .login-page {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      z-index: 9999;
+    }
+
+    .login-page.hidden {
+      display: none;
+    }
+
+    .login-container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px 30px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .login-logo-icon {
+      font-size: 64px;
+      margin-bottom: 10px;
+    }
+
+    .login-logo-title {
+      font-size: 28px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .login-logo-subtitle {
+      font-size: 14px;
+      color: #999;
+      margin-top: 5px;
+    }
+
+    .login-form {
+      margin-top: 20px;
+    }
+
+    .login-input-group {
+      margin-bottom: 20px;
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: border 0.3s ease;
+    }
+
+    .login-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 10px;
+    }
+
+    .login-btn:active {
+      transform: scale(0.98);
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #999;
+    }
+
+    .login-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .login-tab {
+      flex: 1;
+      padding: 12px;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: #666;
+    }
+
+    .login-tab.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .form-section {
+      display: none;
+    }
+
+    .form-section.active {
+      display: block;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 20px 0;
+      color: #999;
+      font-size: 13px;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .divider::before {
+      margin-right: 10px;
+    }
+
+    .divider::after {
+      margin-left: 10px;
+    }
+
+    .google-btn {
+      width: 100%;
+      padding: 14px;
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .google-btn:hover {
+      border-color: #4285f4;
+      background: #f8f9fa;
+    }
+
+    .google-btn:active {
+      transform: scale(0.98);
+    }
+
+    .google-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .app-wrapper {
+      display: none;
+    }
+
+    .app-wrapper.active {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Page -->
+  <div class="login-page" id="loginPage">
+    <div class="login-container">
+      <div class="login-logo">
+        <div class="login-logo-icon">🚌</div>
+        <div class="login-logo-title">PeakMapPH</div>
+        <div class="login-logo-subtitle">Passenger App</div>
+      </div>
+      
+      <!-- Login/Signup Tabs -->
+      <div class="login-tabs">
+        <button class="login-tab active" onclick="switchAuthTab('login')">🔑 Login</button>
+        <button class="login-tab" onclick="switchAuthTab('signup')">✨ Sign Up</button>
+      </div>
+
+      <!-- Google Sign-In Button -->
+      <button class="google-btn" onclick="handleGoogleSignIn()">
+        <svg class="google-icon" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Continue with Google
+      </button>
+
+      <div class="divider">or</div>
+
+      <!-- Login Form -->
+      <div class="form-section active" id="loginForm">
+        <form class="login-form" onsubmit="handleMainLogin(event)">
+          <div class="login-input-group">
+            <input type="text" class="login-input" id="mainUsername" placeholder="Username" required autocomplete="username">
+          </div>
+          <div class="login-input-group">
+            <input type="password" class="login-input" id="mainPassword" placeholder="Password" required autocomplete="current-password">
+          </div>
+          <button type="submit" class="login-btn">🔑 Login</button>
+        </form>
+        <div class="login-footer">
+          New to PeakMapPH? Click Sign Up above
+        </div>
+      </div>
+
+      <!-- Sign Up Form -->
+      <div class="form-section" id="signupForm">
+        <form class="login-form" onsubmit="handleSignUp(event)">
+          <div class="login-input-group">
+            <input type="text" class="login-input" id="signupUsername" placeholder="Username" required autocomplete="username">
+          </div>
+          <div class="login-input-group">
+            <input type="email" class="login-input" id="signupEmail" placeholder="Email" required autocomplete="email">
+          </div>
+          <div class="login-input-group">
+            <input type="password" class="login-input" id="signupPassword" placeholder="Password (min 6 characters)" required autocomplete="new-password">
+          </div>
+          <div class="login-input-group">
+            <input type="password" class="login-input" id="signupConfirmPassword" placeholder="Confirm Password" required autocomplete="new-password">
+          </div>
+          <button type="submit" class="login-btn">✨ Create Account</button>
+        </form>
+        <div class="login-footer">
+          Already have an account? Click Login above
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App Wrapper -->
+  <div class="app-wrapper" id="appWrapper">
+  <!-- Top Header -->
+  <div class="top-header">
+    <div class="header-content">
+      <div class="app-title">🗺 PeakMap</div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="balance-display" id="balanceDisplay" style="display: none;">
+          💰 ₱<span id="headerBalance">0.00</span>
+        </div>
+        <div class="profile-btn" onclick="showProfileModal()" id="profileBtn">
+          <span id="headerAvatar">👤</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Route Info Card -->
+  <div class="route-card" id="routeCard">
+    <div class="route-header">
+      <div class="route-title">Your Route</div>
+      <div class="route-badge" id="routeName">EDSA Route</div>
+    </div>
+    <div class="route-details">
+      <div class="route-detail-item">
+        <span>📍</span>
+        <span id="destination">Quezon City</span>
+      </div>
+    </div>
+    <div class="eta-banner" id="etaBanner">
+      🕐 Arriving in ~25 minutes
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content no-route" id="mainContent">
+    <!-- Stats Section -->
+    <div class="stats-section">
+      <div class="stat-item">
+        <div class="stat-value purple" id="totalBuses">0</div>
+        <div class="stat-label">Buses</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value green" id="lowCapacity">0</div>
+        <div class="stat-label">Low</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value orange" id="moderateCapacity">0</div>
+        <div class="stat-label">Moderate</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value red" id="highCapacity">0</div>
+        <div class="stat-label">High</div>
+      </div>
+    </div>
+
+    <!-- Buses Section -->
+    <div class="buses-section">
+      <div class="section-title">Available Buses</div>
+      <div id="busesList">
+        <div class="empty-state">
+          <div class="empty-icon">🔒</div>
+          <div class="empty-text">Login to view available buses</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('buses')">
+      <div class="nav-icon">🚌</div>
+      <div class="nav-label">Buses</div>
+    </button>
+    <button class="nav-item" onclick="switchTab('routes')">
+      <div class="nav-icon">🗺️</div>
+      <div class="nav-label">Routes</div>
+    </button>
+    <button class="nav-item" onclick="showPaymentModal()">
+      <div class="nav-icon">💳</div>
+      <div class="nav-label">Payment</div>
+    </button>
+    <button class="nav-item" onclick="showProfileModal()">
+      <div class="nav-icon">👤</div>
+      <div class="nav-label">Profile</div>
+    </button>
+  </div>
+
+  <!-- Login Modal -->
+  <div class="modal" id="loginModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Welcome Back!</div>
+        <button class="close-btn" onclick="hideLoginModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Username or Email</label>
+            <input type="text" class="form-input" id="username" required placeholder="Enter your username">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="password" required placeholder="Enter your password">
+          </div>
+          <button type="submit" class="btn-primary">Login</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal" id="paymentModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Payment Method</div>
+        <button class="close-btn" onclick="hidePaymentModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="handlePayment(event)">
+          <div class="form-group">
+            <label class="form-label">Select Payment Method</label>
+            <div class="payment-grid">
+              <div class="payment-option" onclick="selectPayment('Cash')" data-method="Cash">
+                <div class="payment-icon">💵</div>
+                <div class="payment-label">Cash</div>
+              </div>
+              <div class="payment-option" onclick="selectPayment('GCash')" data-method="GCash">
+                <div class="payment-icon">📱</div>
+                <div class="payment-label">GCash</div>
+              </div>
+              <div class="payment-option" onclick="selectPayment('PayMaya')" data-method="PayMaya">
+                <div class="payment-icon">💳</div>
+                <div class="payment-label">PayMaya</div>
+              </div>
+              <div class="payment-option" onclick="selectPayment('Card')" data-method="Card">
+                <div class="payment-icon">💳</div>
+                <div class="payment-label">Credit Card</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="cardDetails" style="display: none;">
+            <div class="form-group">
+              <label class="form-label">Card Number</label>
+              <input type="text" class="form-input" id="cardNumber" placeholder="1234 5678 9012 3456">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cardholder Name</label>
+              <input type="text" class="form-input" id="cardName" placeholder="John Doe">
+            </div>
+          </div>
+
+          <div id="eWalletDetails" style="display: none;">
+            <div class="form-group">
+              <label class="form-label">Mobile Number</label>
+              <input type="tel" class="form-input" id="phoneNumber" placeholder="09XX XXX XXXX">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Fare Amount</label>
+            <input type="number" class="form-input" id="fareAmount" value="15" min="1" readonly style="background: #f8f9fa;">
+          </div>
+
+          <button type="submit" class="btn-primary">Save Payment Method</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div class="modal" id="profileModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Profile</div>
+        <button class="close-btn" onclick="hideProfileModal()">×</button>
+      </div>
+      <div class="modal-body" style="padding: 0;">
+        <div id="profileContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Confirmation Modal -->
+  <div class="modal" id="paymentConfirmModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Confirm Payment</div>
+        <button class="close-btn" onclick="hidePaymentConfirmModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="payment-confirmation">
+          <div class="balance-info">
+            <div class="balance-label">Your Balance</div>
+            <div class="balance-amount">₱<span id="modalBalance">0.00</span></div>
+            <button class="topup-btn" onclick="showTopUpOptions()">+ Add Balance</button>
+          </div>
+
+          <div class="payment-summary">
+            <div class="summary-row">
+              <span>Route:</span>
+              <span id="confirmRoute" style="font-weight: 600;">-</span>
+            </div>
+            <div class="summary-row">
+              <span>Destination:</span>
+              <span id="confirmDestination" style="font-weight: 600;">-</span>
+            </div>
+            <div class="summary-row">
+              <span>Fare:</span>
+              <span id="confirmFare" style="color: #667eea; font-weight: 600;">₱15.00</span>
+            </div>
+            <div class="summary-row">
+              <span>Total:</span>
+              <span style="color: #667eea;">₱<span id="totalAmount">15.00</span></span>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 15px;">
+            <div class="form-label" style="margin-bottom: 10px;">Payment Method</div>
+            <div class="payment-grid" style="grid-template-columns: repeat(3, 1fr);">
+              <div class="payment-option" onclick="selectConfirmPaymentMethod('Cash')" data-method="Cash">
+                <div class="payment-icon" style="font-size: 28px;">💵</div>
+                <div class="payment-label">Cash</div>
+              </div>
+              <div class="payment-option selected" onclick="selectConfirmPaymentMethod('GCash')" data-method="GCash">
+                <div class="payment-icon" style="font-size: 28px;">📱</div>
+                <div class="payment-label">GCash</div>
+              </div>
+              <div class="payment-option" onclick="selectConfirmPaymentMethod('Maya')" data-method="Maya">
+                <div class="payment-icon" style="font-size: 28px;">💳</div>
+                <div class="payment-label">Maya</div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="confirmPayment()">💳 Pay Now</button>
+          <button class="topup-btn" onclick="hidePaymentConfirmModal()" style="margin-top: 10px;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Scan Waiting Modal (for Cash payments) -->
+  <div class="modal" id="qrScanModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">📱 Scan to Pay</div>
+        <button class="close-btn" onclick="hideQrScanModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="scan-waiting">
+          <div class="scan-animation">🔍</div>
+          <div class="scan-title">Waiting for Driver...</div>
+          <div class="scan-subtitle">Show this QR code to the driver to complete payment</div>
+          
+          <div class="qr-container" style="margin: 20px auto; max-width: 250px;">
+            <div id="qrcodeCash" class="qr-code"></div>
+          </div>
+
+          <div class="payment-summary" style="margin: 20px 0;">
+            <div class="summary-row">
+              <span>Route:</span>
+              <span id="scanRoute" style="font-weight: 600;">-</span>
+            </div>
+            <div class="summary-row">
+              <span>Destination:</span>
+              <span id="scanDestination" style="font-weight: 600;">-</span>
+            </div>
+            <div class="summary-row" style="margin-bottom: 0;">
+              <span>Amount:</span>
+              <span style="color: #667eea; font-weight: bold;">₱15.00</span>
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="simulateDriverScan()" style="background: #2ecc71;">✅ Simulate Driver Scan</button>
+          <div style="font-size: 11px; color: #999; margin-top: 8px;">(For testing - driver will scan in production)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Modal -->
+  <div class="modal" id="receiptModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Payment Receipt</div>
+        <button class="close-btn" onclick="hideReceiptModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align: center; padding: 20px 0;">
+          <div style="font-size: 64px; margin-bottom: 10px;">✅</div>
+          <div style="font-size: 22px; font-weight: bold; color: #2ecc71; margin-bottom: 5px;">Payment Successful!</div>
+          <div style="font-size: 14px; color: #999; margin-bottom: 20px;">Transaction completed</div>
+        </div>
+
+        <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+          <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px dashed #dee2e6;">
+            <div style="font-size: 12px; color: #999; margin-bottom: 5px;">RECEIPT NO.</div>
+            <div style="font-size: 18px; font-weight: bold; color: #333;" id="receiptNumber">-</div>
+            <div style="font-size: 11px; color: #999; margin-top: 5px;" id="receiptDate">-</div>
+          </div>
+
+          <div class="summary-row" style="margin-bottom: 12px;">
+            <span style="color: #666;">Route:</span>
+            <span id="receiptRoute" style="font-weight: 600; color: #333;">-</span>
+          </div>
+          <div class="summary-row" style="margin-bottom: 12px;">
+            <span style="color: #666;">Destination:</span>
+            <span id="receiptDestination" style="font-weight: 600; color: #333;">-</span>
+          </div>
+          <div class="summary-row" style="margin-bottom: 12px;">
+            <span style="color: #666;">Payment Method:</span>
+            <span id="receiptPaymentMethod" style="font-weight: 600; color: #333;">-</span>
+          </div>
+          <div class="summary-row" style="margin-bottom: 12px;">
+            <span style="color: #666;">Fare Amount:</span>
+            <span id="receiptFare" style="font-weight: 600; color: #667eea;">₱15.00</span>
+          </div>
+          <div style="border-top: 2px solid #dee2e6; padding-top: 12px; margin-top: 12px;">
+            <div class="summary-row" style="margin-bottom: 0;">
+              <span style="font-weight: bold; color: #333;">Total Paid:</span>
+              <span id="receiptTotal" style="font-weight: bold; font-size: 18px; color: #667eea;">₱15.00</span>
+            </div>
+          </div>
+          <div style="border-top: 1px solid #dee2e6; padding-top: 12px; margin-top: 12px;">
+            <div class="summary-row" style="margin-bottom: 0;">
+              <span style="color: #666;">Remaining Balance:</span>
+              <span id="receiptBalance" style="font-weight: 600; color: #2ecc71;">₱0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; color: #999; font-size: 12px; margin-bottom: 15px;">
+          🚌 Thank you for riding with PeakMapPH!
+        </div>
+
+        <button class="btn-primary" onclick="hideReceiptModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt History Modal -->
+  <div class="modal" id="receiptHistoryModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🎫 My Tickets</div>
+        <button class="close-btn" onclick="hideReceiptHistory()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="receiptHistoryContent" style="padding: 10px;">
+          <!-- Receipts will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Routes Modal -->
+  <div class="modal" id="routesModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Available Routes</div>
+        <button class="close-btn" onclick="hideRoutesModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="routesContent">
+          <div class="route-list">
+            <div class="route-item" onclick="selectRoute('EDSA Route', 'Quezon City')">
+              <div class="route-item-icon">🚌</div>
+              <div class="route-item-content">
+                <div class="route-item-title">EDSA Route</div>
+                <div class="route-item-desc">Quezon City • 25-40 min</div>
+              </div>
+              <div class="route-item-arrow">›</div>
+            </div>
+            <div class="route-item" onclick="selectRoute('Commonwealth Avenue', 'Fairview')">
+              <div class="route-item-icon">🚌</div>
+              <div class="route-item-content">
+                <div class="route-item-title">Commonwealth Avenue</div>
+                <div class="route-item-desc">Fairview • 30-45 min</div>
+              </div>
+              <div class="route-item-arrow">›</div>
+            </div>
+            <div class="route-item" onclick="selectRoute('Katipunan Avenue', 'UP Diliman')">
+              <div class="route-item-icon">🚌</div>
+              <div class="route-item-content">
+                <div class="route-item-title">Katipunan Avenue</div>
+                <div class="route-item-desc">UP Diliman • 20-35 min</div>
+              </div>
+              <div class="route-item-arrow">›</div>
+            </div>
+            <div class="route-item" onclick="selectRoute('España Boulevard', 'Manila')">
+              <div class="route-item-icon">🚌</div>
+              <div class="route-item-content">
+                <div class="route-item-title">España Boulevard</div>
+                <div class="route-item-desc">Manila • 25-40 min</div>
+              </div>
+              <div class="route-item-arrow">›</div>
+            </div>
+            <div class="route-item" onclick="selectRoute('C-5 Road', 'Taguig City')">
+              <div class="route-item-icon">🚌</div>
+              <div class="route-item-content">
+                <div class="route-item-title">C-5 Road</div>
+                <div class="route-item-desc">Taguig City • 35-50 min</div>
+              </div>
+              <div class="route-item-arrow">›</div>
+            </div>
+            <div class="route-item" onclick="selectRoute('Ortigas Avenue', 'Pasig City')">
+              <div class="route-item-icon">🚌</div>
+              <div class="route-item-content">
+                <div class="route-item-title">Ortigas Avenue</div>
+                <div class="route-item-desc">Pasig City • 20-30 min</div>
+              </div>
+              <div class="route-item-arrow">›</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div> <!-- End of app-wrapper -->
+
+  <script>
+    let isLoggedIn = localStorage.getItem('passengerLoggedIn') === 'true';
+    let selectedPaymentMethod = localStorage.getItem('paymentMethod') || 'Cash';
+    let userDestination = localStorage.getItem('userDestination') || 'Quezon City';
+    let userBalance = parseFloat(localStorage.getItem('userBalance')) || 100.00; // Starting balance
+    let pendingRoute = null;
+    let pendingDestination = null;
+    let confirmPaymentMethod = 'GCash'; // Default payment method for confirmation
+    let updateInterval;
+
+    // Check login status on page load
+    window.addEventListener('DOMContentLoaded', function() {
+      if (isLoggedIn) {
+        showMainApp();
+      }
+    });
+
+    function showMainApp() {
+      document.getElementById('loginPage').classList.add('hidden');
+      document.getElementById('appWrapper').classList.add('active');
+      updateUIForAuth();
+      loadBuses();
+    }
+
+    function handleMainLogin(event) {
+      event.preventDefault();
+      const username = document.getElementById('mainUsername').value;
+      const password = document.getElementById('mainPassword').value;
+
+      if (username && password.length >= 6) {
+        // Check if user exists in registered users
+        const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+        const user = users.find(u => u.username === username && u.password === password);
+        
+        if (user || users.length === 0) { // Allow login if user exists or no users registered yet
+          localStorage.setItem('passengerLoggedIn', 'true');
+          localStorage.setItem('passengerUsername', username);
+          localStorage.setItem('passengerEmail', user ? user.email : username + '@peakmap.ph');
+          isLoggedIn = true;
+          showMainApp();
+        } else {
+          alert('❌ Invalid username or password. Please try again or sign up.');
+        }
+      } else {
+        alert('Please enter a username and password with at least 6 characters');
+      }
+    }
+
+    function handleSignUp(event) {
+      event.preventDefault();
+      const username = document.getElementById('signupUsername').value;
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+      const confirmPassword = document.getElementById('signupConfirmPassword').value;
+
+      if (password !== confirmPassword) {
+        alert('❌ Passwords do not match!');
+        return;
+      }
+
+      if (password.length < 6) {
+        alert('❌ Password must be at least 6 characters long!');
+        return;
+      }
+
+      // Check if username already exists
+      const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+      if (users.find(u => u.username === username)) {
+        alert('❌ Username already exists! Please choose another.');
+        return;
+      }
+
+      // Register new user
+      users.push({ username, email, password });
+      localStorage.setItem('registeredUsers', JSON.stringify(users));
+
+      // Auto login after signup
+      localStorage.setItem('passengerLoggedIn', 'true');
+      localStorage.setItem('passengerUsername', username);
+      localStorage.setItem('passengerEmail', email);
+      isLoggedIn = true;
+      
+      alert('✅ Account created successfully! Welcome to PeakMapPH!');
+      showMainApp();
+    }
+
+    function handleGoogleSignIn() {
+      // Google Sign-In implementation
+      // Note: Requires Google OAuth Client ID configuration
+      alert('🔒 Google Sign-In\n\nTo enable Google Sign-In:\n1. Set up Google OAuth 2.0 Client ID\n2. Add your client ID to the configuration\n3. Configure authorized redirect URIs\n\nFor now, please use the regular login or sign up.');
+      
+      // Example: After successful Google authentication
+      // const googleUser = response.profileObj;
+      // localStorage.setItem('passengerLoggedIn', 'true');
+      // localStorage.setItem('passengerUsername', googleUser.name);
+      // localStorage.setItem('passengerEmail', googleUser.email);
+      // isLoggedIn = true;
+      // showMainApp();
+    }
+
+    function switchAuthTab(tab) {
+      const tabs = document.querySelectorAll('.login-tab');
+      const forms = document.querySelectorAll('.form-section');
+      
+      tabs.forEach(t => t.classList.remove('active'));
+      forms.forEach(f => f.classList.remove('active'));
+      
+      if (tab === 'login') {
+        tabs[0].classList.add('active');
+        document.getElementById('loginForm').classList.add('active');
+      } else {
+        tabs[1].classList.add('active');
+        document.getElementById('signupForm').classList.add('active');
+      }
+    }
+
+    function showLoginModal() {
+      document.getElementById('loginModal').classList.add('active');
+    }
+
+    function hideLoginModal() {
+      document.getElementById('loginModal').classList.remove('active');
+    }
+
+    function showPaymentModal() {
+      if (!isLoggedIn) {
+        showLoginModal();
+        return;
+      }
+      document.getElementById('paymentModal').classList.add('active');
+      selectPayment(selectedPaymentMethod);
+    }
+
+    function hidePaymentModal() {
+      document.getElementById('paymentModal').classList.remove('active');
+    }
+
+    function showProfileModal() {
+      const modal = document.getElementById('profileModal');
+      const content = document.getElementById('profileContent');
+      
+      if (!isLoggedIn) {
+        content.innerHTML = `
+          <div class="empty-state" style="padding: 40px 20px;">
+            <div class="empty-icon">🔒</div>
+            <div class="empty-text">Please login to view your profile</div>
+            <button class="btn-primary" onclick="hideProfileModal(); showLoginModal();" style="margin-top: 20px; width: calc(100% - 40px); margin-left: 20px;">
+              Login Now
+            </button>
+          </div>
+        `;
+      } else {
+        const username = localStorage.getItem('passengerUsername') || 'Passenger';
+        content.innerHTML = `
+          <div class="profile-section">
+            <div class="profile-avatar">${username.charAt(0).toUpperCase()}</div>
+            <div class="profile-name">${username}</div>
+            <div class="profile-email">${username.toLowerCase()}@peakmap.ph</div>
+          </div>
+          
+          <div style="padding: 0 20px;">
+            <div class="menu-list">
+              <div class="menu-item">
+                <div class="menu-item-left">
+                  <div class="menu-icon">💳</div>
+                  <div class="menu-text">Payment Method</div>
+                </div>
+                <div class="menu-value">${selectedPaymentMethod}</div>
+              </div>
+              <div class="menu-item" onclick="hideProfileModal(); showPaymentModal();">
+                <div class="menu-item-left">
+                  <div class="menu-icon">⚙️</div>
+                  <div class="menu-text">Change Payment</div>
+                </div>
+                <div class="menu-value">›</div>
+              </div>
+              <div class="menu-item">
+                <div class="menu-item-left">
+                  <div class="menu-icon">📍</div>
+                  <div class="menu-text">Destination</div>
+                </div>
+                <div class="menu-value">${userDestination}</div>
+              </div>
+            </div>
+
+            <div class="menu-list">
+              <div class="menu-item">
+                <div class="menu-item-left">
+                  <div class="menu-icon">ℹ️</div>
+                  <div class="menu-text">About PeakMap</div>
+                </div>
+                <div class="menu-value">›</div>
+              </div>
+              <div class="menu-item">
+                <div class="menu-item-left">
+                  <div class="menu-icon">�</div>
+                  <div class="menu-text">Balance</div>
+                </div>
+                <div class="menu-value" style="color: #667eea; font-weight: bold;">₱${userBalance.toFixed(2)}</div>
+              </div>
+              <div class="menu-item" onclick="showTopUpOptions()" style="cursor: pointer;">
+                <div class="menu-item-left">
+                  <div class="menu-icon">💳</div>
+                  <div class="menu-text">Add Balance</div>
+                </div>
+                <div class="menu-value">›</div>
+              </div>
+              <div class="menu-item">
+                <div class="menu-item-left">
+                  <div class="menu-icon">�📱</div>
+                  <div class="menu-text">Version</div>
+                </div>
+                <div class="menu-value">1.0.0</div>
+              </div>
+            </div>
+          </div>
+
+          <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+        `;
+      }
+      modal.classList.add('active');
+    }
+
+    function hideProfileModal() {
+      document.getElementById('profileModal').classList.remove('active');
+    }
+
+    function showRoutesModal() {
+      document.getElementById('routesModal').classList.add('active');
+    }
+
+    function hideRoutesModal() {
+      document.getElementById('routesModal').classList.remove('active');
+    }
+
+    function selectRoute(routeName, destination) {
+      if (!isLoggedIn) {
+        hideRoutesModal();
+        showLoginModal();
+        return;
+      }
+      
+      // Store pending route selection
+      pendingRoute = routeName;
+      pendingDestination = destination;
+      
+      // Show payment confirmation
+      hideRoutesModal();
+      showPaymentConfirmModal();
+    }
+
+    function showPaymentConfirmModal() {
+      document.getElementById('confirmRoute').textContent = pendingRoute;
+      document.getElementById('confirmDestination').textContent = pendingDestination;
+      updateBalanceDisplay();
+      
+      // Reset to default payment method
+      confirmPaymentMethod = 'GCash';
+      document.querySelectorAll('#paymentConfirmModal .payment-option').forEach(opt => {
+        opt.classList.remove('selected');
+        if (opt.dataset.method === 'GCash') {
+          opt.classList.add('selected');
+        }
+      });
+      
+      document.getElementById('paymentConfirmModal').classList.add('active');
+    }
+
+    function hidePaymentConfirmModal(clearPending = true) {
+      document.getElementById('paymentConfirmModal').classList.remove('active');
+      if (clearPending) {
+        pendingRoute = null;
+        pendingDestination = null;
+      }
+    }
+
+    function selectConfirmPaymentMethod(method) {
+      confirmPaymentMethod = method;
+      
+      document.querySelectorAll('#paymentConfirmModal .payment-option').forEach(opt => {
+        opt.classList.remove('selected');
+        if (opt.dataset.method === method) {
+          opt.classList.add('selected');
+        }
+      });
+    }
+
+    function showReceiptModal(receipt) {
+      const dateStr = new Date(receipt.date).toLocaleString('en-PH', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+      
+      document.getElementById('receiptNumber').textContent = receipt.id;
+      document.getElementById('receiptDate').textContent = dateStr;
+      document.getElementById('receiptRoute').textContent = receipt.route;
+      document.getElementById('receiptDestination').textContent = receipt.destination;
+      document.getElementById('receiptPaymentMethod').textContent = receipt.paymentMethod;
+      document.getElementById('receiptFare').textContent = '₱' + receipt.fare.toFixed(2);
+      document.getElementById('receiptTotal').textContent = '₱' + receipt.fare.toFixed(2);
+      document.getElementById('receiptBalance').textContent = '₱' + receipt.balanceAfter.toFixed(2);
+      
+      document.getElementById('receiptModal').classList.add('active');
+    }
+
+    function hideReceiptModal() {
+      document.getElementById('receiptModal').classList.remove('active');
+    }
+
+    function showQrScanModal() {
+      // Update modal with route info
+      document.getElementById('scanRoute').textContent = pendingRoute;
+      document.getElementById('scanDestination').textContent = pendingDestination;
+      
+      // Generate QR code for cash payment
+      const qrCodeDiv = document.getElementById('qrcodeCash');
+      qrCodeDiv.innerHTML = ''; // Clear previous
+      
+      const ticketId = 'CASH-TKT' + Date.now().toString().slice(-8);
+      const qrData = JSON.stringify({
+        ticketId: ticketId,
+        route: pendingRoute,
+        destination: pendingDestination,
+        passenger: localStorage.getItem('passengerUsername') || 'Passenger',
+        fare: 15.00,
+        paymentMethod: 'Cash',
+        timestamp: new Date().toISOString()
+      });
+      
+      new QRCode(qrCodeDiv, {
+        text: qrData,
+        width: 200,
+        height: 200,
+        colorDark: "#333333",
+        colorLight: "#ffffff"
+      });
+      
+      // Store pending cash payment data
+      window.pendingCashPayment = {
+        ticketId: ticketId,
+        qrData: qrData
+      };
+      
+      document.getElementById('qrScanModal').classList.add('active');
+    }
+
+    function hideQrScanModal() {
+      document.getElementById('qrScanModal').classList.remove('active');
+      window.pendingCashPayment = null;
+      // Clear pending route/destination when user cancels QR scan
+      pendingRoute = null;
+      pendingDestination = null;
+    }
+
+    function simulateDriverScan() {
+      if (!window.pendingCashPayment) return;
+      
+      // Simulate driver scanning the QR code
+      const fare = 15.00;
+      const ticketId = window.pendingCashPayment.ticketId;
+      const now = new Date();
+      const expiryTime = new Date(now.getTime() + 60 * 60 * 1000);
+      
+      const receipt = {
+        id: ticketId,
+        date: now.toISOString(),
+        expiryDate: expiryTime.toISOString(),
+        route: pendingRoute,
+        destination: pendingDestination,
+        paymentMethod: 'Cash',
+        fare: fare,
+        balanceAfter: userBalance, // Cash doesn't affect balance
+        boardingStatus: 'boarded', // Mark as boarded immediately for cash
+        passengerName: localStorage.getItem('passengerUsername') || 'Passenger'
+      };
+      
+      // Save receipt
+      saveReceipt(receipt);
+      
+      // Confirm route selection
+      localStorage.setItem('selectedRoute', pendingRoute);
+      localStorage.setItem('userDestination', pendingDestination);
+      userDestination = pendingDestination;
+      
+      // Update UI
+      document.getElementById('routeName').textContent = pendingRoute;
+      document.getElementById('destination').textContent = pendingDestination;
+      
+      // Hide QR scan modal and show success receipt
+      hideQrScanModal();
+      showReceiptModal(receipt);
+      
+      // Update ETA
+      setTimeout(() => {
+        calculateETA();
+      }, 1000);
+    }
+
+    function saveReceipt(receipt) {
+      let receipts = JSON.parse(localStorage.getItem('userReceipts')) || [];
+      receipts.unshift(receipt); // Add to beginning
+      
+      // Keep only last 50 receipts
+      if (receipts.length > 50) {
+        receipts = receipts.slice(0, 50);
+      }
+      
+      localStorage.setItem('userReceipts', JSON.stringify(receipts));
+    }
+
+    function updateBoardingStatus(receipt) {
+      const statusElement = document.getElementById('boardingStatus');
+      const validityElement = document.getElementById('ticketValidity');
+      const now = new Date();
+      const expiry = new Date(receipt.expiryDate);
+      
+      if (receipt.boardingStatus === 'boarded') {
+        statusElement.textContent = '✅ Boarded';
+        statusElement.className = 'boarding-status boarded';
+        validityElement.textContent = 'Ticket used';
+      } else if (now > expiry) {
+        statusElement.textContent = '❌ Expired';
+        statusElement.className = 'boarding-status expired';
+        validityElement.textContent = 'Ticket expired';
+      } else {
+        const timeLeft = Math.floor((expiry - now) / 60000); // minutes
+        statusElement.textContent = '⏳ Pending Boarding';
+        statusElement.className = 'boarding-status pending';
+        validityElement.textContent = `Valid for ${timeLeft} minutes`;
+      }
+    }
+
+    function showReceiptHistory() {
+      const receipts = JSON.parse(localStorage.getItem('userReceipts')) || [];
+      const content = document.getElementById('receiptHistoryContent');
+      
+      if (receipts.length === 0) {
+        content.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🎫</div>
+            <div class="empty-text">No tickets yet</div>
+          </div>
+        `;
+      } else {
+        let html = '';
+        receipts.forEach(receipt => {
+          const date = new Date(receipt.date);
+          const dateStr = date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+          const timeStr = date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+          
+          const now = new Date();
+          const expiry = new Date(receipt.expiryDate);
+          let statusBadge = '';
+          
+          if (receipt.boardingStatus === 'boarded') {
+            statusBadge = '<span style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: bold;">✅ BOARDED</span>';
+          } else if (now > expiry) {
+            statusBadge = '<span style="background: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: bold;">❌ EXPIRED</span>';
+          } else {
+            statusBadge = '<span style="background: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: bold;">⏳ VALID</span>';
+          }
+          
+          html += `
+            <div style="background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer;" onclick='viewReceipt(${JSON.stringify(receipt).replace(/'/g, "&apos;")})'>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
+                <div style="font-weight: bold; color: #333;">${receipt.route}</div>
+                <div>${statusBadge}</div>
+              </div>
+              <div style="font-size: 13px; color: #999; margin-bottom: 8px;">📍 ${receipt.destination}</div>
+              <div style="display: flex; justify-content: space-between; font-size: 12px; color: #999;">
+                <span>🎫 ${receipt.id}</span>
+                <span>${dateStr} • ${timeStr}</span>
+              </div>
+              <div style="margin-top: 8px; font-size: 12px; color: #667eea; font-weight: bold;">₱${receipt.fare.toFixed(2)} • ${receipt.paymentMethod}</div>
+            </div>
+          `;
+        });
+        content.innerHTML = html;
+      }
+      
+      document.getElementById('receiptHistoryModal').classList.add('active');
+    }
+
+    function hideReceiptHistory() {
+      document.getElementById('receiptHistoryModal').classList.remove('active');
+    }
+
+    function viewReceipt(receipt) {
+      hideReceiptHistory();
+      showReceiptModal(receipt);
+    }
+
+    function confirmPayment() {
+      const fare = 15.00;
+      
+      // For Cash payment, show QR scan modal first
+      if (confirmPaymentMethod === 'Cash') {
+        hidePaymentConfirmModal(false); // Don't clear pending route/destination
+        showQrScanModal();
+        return;
+      }
+      
+      // For digital payments, check balance
+      if (userBalance < fare) {
+        alert('❌ Insufficient balance! Please add funds or select Cash payment.');
+        return;
+      }
+      
+      // Deduct fare from balance for digital payments
+      userBalance -= fare;
+      localStorage.setItem('userBalance', userBalance.toFixed(2));
+      updateBalanceDisplay();
+      
+      // Generate receipt with ticket data
+      const ticketId = 'TKT' + Date.now().toString().slice(-8);
+      const now = new Date();
+      const expiryTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+      
+      const receipt = {
+        id: ticketId,
+        date: now.toISOString(),
+        expiryDate: expiryTime.toISOString(),
+        route: pendingRoute,
+        destination: pendingDestination,
+        paymentMethod: confirmPaymentMethod,
+        fare: fare,
+        balanceAfter: userBalance,
+        boardingStatus: 'pending',
+        passengerName: localStorage.getItem('passengerUsername') || 'Passenger'
+      };
+      
+      // Save receipt
+      saveReceipt(receipt);
+      
+      // Confirm route selection
+      localStorage.setItem('selectedRoute', pendingRoute);
+      localStorage.setItem('userDestination', pendingDestination);
+      userDestination = pendingDestination;
+      
+      // Update UI
+      document.getElementById('routeName').textContent = pendingRoute;
+      document.getElementById('destination').textContent = pendingDestination;
+      
+      // Hide payment modal and show receipt
+      hidePaymentConfirmModal();
+      showReceiptModal(receipt);
+      
+      // Update ETA after a short delay
+      setTimeout(() => {
+        calculateETA();
+      }, 1000);
+    }
+
+    function showTopUpOptions() {
+      const amounts = [50, 100, 200, 500, 1000];
+      const choice = prompt(`Select top-up amount:\n1. ₱50\n2. ₱100\n3. ₱200\n4. ₱500\n5. ₱1000\n\nEnter number (1-5):`);
+      
+      if (choice && choice >= 1 && choice <= 5) {
+        const amount = amounts[choice - 1];
+        userBalance += amount;
+        localStorage.setItem('userBalance', userBalance.toFixed(2));
+        updateBalanceDisplay();
+        alert(`✅ Successfully added ₱${amount} to your balance!`);
+      }
+    }
+
+    function switchTab(tab) {
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => item.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      if (tab === 'routes') {
+        showRoutesModal();
+      }
+    }
+
+    function handleLogin(event) {
+      event.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      if (username && password.length >= 6) {
+        localStorage.setItem('passengerLoggedIn', 'true');
+        localStorage.setItem('passengerUsername', username);
+        isLoggedIn = true;
+        updateUIForAuth();
+        hideLoginModal();
+        loadBuses();
+      } else {
+        alert('Please enter valid credentials (min 6 characters)');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('passengerLoggedIn');
+      localStorage.removeItem('passengerUsername');
+      isLoggedIn = false;
+      hideProfileModal();
+      
+      // Return to login page
+      document.getElementById('appWrapper').classList.remove('active');
+      document.getElementById('loginPage').classList.remove('hidden');
+      
+      // Clear inputs
+      document.getElementById('mainUsername').value = '';
+      document.getElementById('mainPassword').value = '';
+    }
+
+    function selectPayment(method) {
+      selectedPaymentMethod = method;
+      
+      document.querySelectorAll('.payment-option').forEach(opt => {
+        opt.classList.remove('selected');
+        if (opt.dataset.method === method) {
+          opt.classList.add('selected');
+        }
+      });
+
+      const cardDetails = document.getElementById('cardDetails');
+      const eWalletDetails = document.getElementById('eWalletDetails');
+      
+      if (method === 'Card') {
+        cardDetails.style.display = 'block';
+        eWalletDetails.style.display = 'none';
+      } else if (method === 'GCash' || method === 'PayMaya') {
+        cardDetails.style.display = 'none';
+        eWalletDetails.style.display = 'block';
+      } else {
+        cardDetails.style.display = 'none';
+        eWalletDetails.style.display = 'none';
+      }
+    }
+
+    function handlePayment(event) {
+      event.preventDefault();
+      localStorage.setItem('paymentMethod', selectedPaymentMethod);
+      document.getElementById('paymentMethod').textContent = selectedPaymentMethod;
+      hidePaymentModal();
+      
+      const banner = document.getElementById('etaBanner');
+      const originalText = banner.textContent;
+      banner.textContent = `✅ Payment updated to ${selectedPaymentMethod}`;
+      setTimeout(() => banner.textContent = originalText, 3000);
+    }
+
+    function updateUIForAuth() {
+      const routeCard = document.getElementById('routeCard');
+      const headerAvatar = document.getElementById('headerAvatar');
+      const mainContent = document.getElementById('mainContent');
+      const balanceDisplay = document.getElementById('balanceDisplay');
+
+      if (isLoggedIn) {
+        const username = localStorage.getItem('passengerUsername') || 'Passenger';
+        headerAvatar.textContent = username.charAt(0).toUpperCase();
+        routeCard.classList.add('active');
+        mainContent.classList.add('with-route');
+        mainContent.classList.remove('no-route');
+        document.getElementById('paymentMethod').textContent = selectedPaymentMethod;
+        balanceDisplay.style.display = 'flex';
+        updateBalanceDisplay();
+        calculateETA();
+      } else {
+        headerAvatar.textContent = '👤';
+        routeCard.classList.remove('active');
+        mainContent.classList.add('no-route');
+        mainContent.classList.remove('with-route');
+        balanceDisplay.style.display = 'none';
+      }
+    }
+
+    function updateBalanceDisplay() {
+      document.getElementById('headerBalance').textContent = userBalance.toFixed(2);
+      document.getElementById('modalBalance').textContent = userBalance.toFixed(2);
+    }
+
+    function calculateETA() {
+      const baseTime = 25;
+      const trafficFactor = Math.random() * 15;
+      const totalMinutes = Math.round(baseTime + trafficFactor);
+      
+      const etaTime = new Date();
+      etaTime.setMinutes(etaTime.getMinutes() + totalMinutes);
+      
+      const etaString = etaTime.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+      
+      document.getElementById('etaBanner').textContent = `🕐 Arriving in ~${totalMinutes} min (${etaString})`;
+      document.getElementById('destination').textContent = userDestination;
+    }
+
+    async function loadBuses() {
+      const busesList = document.getElementById('busesList');
+      
+      if (!isLoggedIn) {
+        busesList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🔒</div>
+            <div class="empty-text">Login to view available buses</div>
+          </div>
+        `;
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:8000/buses");
+        const data = await res.json();
+
+        if (data.length === 0) {
+          busesList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🚌</div>
+              <div class="empty-text">No buses available</div>
+            </div>
+          `;
+          updateSummary(data);
+          return;
+        }
+
+        busesList.innerHTML = "";
+
+        data.forEach(bus => {
+          const maxCapacity = 50;
+          const capacityPercent = Math.min((bus.count / maxCapacity) * 100, 100);
+          const arrivalMin = Math.floor(Math.random() * 20 + 5);
+
+          busesList.innerHTML += `
+            <div class="bus-card">
+              <div class="bus-card-header">
+                <div class="bus-id">🚍 ${bus.bus_id}</div>
+                <div class="status-badge ${bus.crowd_level}">${bus.crowd_level}</div>
+              </div>
+              <div class="bus-info-grid">
+                <div class="info-cell">
+                  <div class="info-icon">👥</div>
+                  <div class="info-value">${bus.count}</div>
+                  <div class="info-label">Passengers</div>
+                </div>
+                <div class="info-cell">
+                  <div class="info-icon">📊</div>
+                  <div class="info-value">${capacityPercent.toFixed(0)}%</div>
+                  <div class="info-label">Capacity</div>
+                </div>
+                <div class="info-cell">
+                  <div class="info-icon">${getStatusEmoji(bus.crowd_level)}</div>
+                  <div class="info-value">${getStatusText(bus.crowd_level)}</div>
+                  <div class="info-label">Status</div>
+                </div>
+              </div>
+              <div class="capacity-bar">
+                <div class="capacity-fill ${bus.crowd_level}" style="width: ${capacityPercent}%"></div>
+              </div>
+              <div class="bus-eta">
+                <span>🕐 Arriving in</span>
+                <span class="bus-eta-time">~${arrivalMin} minutes</span>
+              </div>
+            </div>
+          `;
+        });
+
+        updateSummary(data);
+      } catch (error) {
+        console.error('Error:', error);
+        busesList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⚠️</div>
+            <div class="empty-text">Unable to load data</div>
+          </div>
+        `;
+      }
+    }
+
+    function getStatusEmoji(level) {
+      return level === 'LOW' ? '✅' : level === 'MODERATE' ? '⚠️' : '🚫';
+    }
+
+    function getStatusText(level) {
+      return level === 'LOW' ? 'Good' : level === 'MODERATE' ? 'Fair' : 'Full';
+    }
+
+    function updateSummary(data) {
+      document.getElementById('totalBuses').textContent = data.length;
+      document.getElementById('lowCapacity').textContent = data.filter(b => b.crowd_level === 'LOW').length;
+      document.getElementById('moderateCapacity').textContent = data.filter(b => b.crowd_level === 'MODERATE').length;
+      document.getElementById('highCapacity').textContent = data.filter(b => b.crowd_level === 'HIGH').length;
+    }
+
+    // Initialize
+    updateUIForAuth();
+    if (isLoggedIn) {
+      loadBuses();
+      setInterval(loadBuses, 5000);
+      setInterval(calculateETA, 60000);
+    }
+  </script>
+</body>
+</html>

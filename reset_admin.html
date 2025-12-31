@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Admin Dashboard</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0e2a47;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #12395f;
+      padding: 40px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 500px;
+    }
+    h1 {
+      color: #4cc3ff;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #4cc3ff;
+      color: #0e2a47;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    button:hover {
+      background: #06b6d4;
+    }
+    .info {
+      background: #1e4f7c;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .success {
+      color: #4ade80;
+      font-size: 18px;
+      margin-top: 20px;
+    }
+    .credentials {
+      background: #0f2f53;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 15px;
+      text-align: left;
+    }
+    .credentials strong {
+      color: #4cc3ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 PeakMapPH Admin Reset</h1>
+    <p>Click the button below to reset your admin dashboard and create a fresh default account.</p>
+    
+    <button onclick="resetDashboard()">🔄 Reset Dashboard</button>
+    <button onclick="window.location.href='admin.html'">➡️ Go to Admin Dashboard</button>
+    
+    <div class="info">
+      <strong>After resetting, use these credentials:</strong>
+      <div class="credentials">
+        <strong>Username:</strong> admin<br>
+        <strong>Password:</strong> admin123
+      </div>
+    </div>
+    
+    <div id="result"></div>
+  </div>
+
+  <script>
+    function resetDashboard() {
+      // Clear all admin-related localStorage
+      localStorage.removeItem('adminLoggedIn');
+      localStorage.removeItem('adminUsername');
+      localStorage.removeItem('adminFullName');
+      localStorage.removeItem('adminEmail');
+      localStorage.removeItem('adminRole');
+      localStorage.removeItem('adminContact');
+      localStorage.removeItem('adminBirthDate');
+      
+      // Create fresh default admin account
+      const defaultAdmin = [{
+        fullName: 'System Administrator',
+        birthDate: '1990-01-01',
+        contactNumber: '09123456789',
+        email: 'admin@peakmap.ph',
+        role: 'ADMIN',
+        username: 'admin',
+        password: 'admin123'
+      }];
+      
+      localStorage.setItem('registeredAdmins', JSON.stringify(defaultAdmin));
+      
+      // Show success message
+      document.getElementById('result').innerHTML = `
+        <div class="success">
+          ✅ Dashboard Reset Successfully!<br>
+          <small>You can now login with admin/admin123</small>
+        </div>
+      `;
+      
+      console.log('✓ Dashboard reset complete');
+      console.log('✓ Default admin created:', defaultAdmin[0]);
+    }
+    
+    // Show current state on load
+    window.addEventListener('DOMContentLoaded', () => {
+      const admins = JSON.parse(localStorage.getItem('registeredAdmins') || '[]');
+      console.log('Current registered admins:', admins);
+      console.log('Logged in:', localStorage.getItem('adminLoggedIn'));
+    });
+  </script>
+</body>
+</html>
