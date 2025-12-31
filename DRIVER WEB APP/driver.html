@@ -302,6 +302,16 @@
         </div>
       </div>
 
+      <div style="margin-top:18px; margin-bottom:14px;">
+        <h3 style="margin-bottom:8px; font-size:16px; color:#2c3e50;">💳 Record Payments</h3>
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+          <input id="cashInput" type="number" min="0" placeholder="Cash" style="flex:1; padding:10px; border-radius:8px; border:1px solid #bdc3c7;" />
+          <input id="cardInput" type="number" min="0" placeholder="Card" style="flex:1; padding:10px; border-radius:8px; border:1px solid #bdc3c7;" />
+          <input id="ewalletInput" type="number" min="0" placeholder="E-Wallet" style="flex:1; padding:10px; border-radius:8px; border:1px solid #bdc3c7;" />
+        </div>
+        <button class="send-btn" onclick="recordPayment()" id="recordPaymentBtn">💾 Record Payment</button>
+      </div>
+
       <button class="send-btn" onclick="sendData()" id="sendBtn">
         📡 Send Bus Data
       </button>
@@ -424,6 +434,39 @@
           btn.textContent = '📡 Send Bus Data';
         }
       });
+    }
+
+    // Record payment locally (saved to localStorage 'payments')
+    function recordPayment(){
+      const busEl = document.querySelector('.bus-id-badge');
+      const busId = busEl ? busEl.textContent.trim() : 'UNKNOWN';
+      const cash = Number(document.getElementById('cashInput').value) || 0;
+      const card = Number(document.getElementById('cardInput').value) || 0;
+      const ewallet = Number(document.getElementById('ewalletInput').value) || 0;
+
+      if (cash === 0 && card === 0 && ewallet === 0) {
+        showStatus('Please enter at least one payment amount.', 'error');
+        return;
+      }
+
+      const payments = JSON.parse(localStorage.getItem('payments') || '[]');
+      payments.push({
+        busId,
+        cash,
+        card,
+        ewallet,
+        timestamp: Date.now()
+      });
+      localStorage.setItem('payments', JSON.stringify(payments));
+
+      // clear inputs and show success
+      document.getElementById('cashInput').value = '';
+      document.getElementById('cardInput').value = '';
+      document.getElementById('ewalletInput').value = '';
+      showStatus('✅ Payment recorded locally.', 'success');
+
+      // If desired, also trigger a sendData() to backend
+      // sendData();
     }
 
     // Initialize

@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>PeakMapPH – Passenger</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * {
@@ -1058,6 +1059,7 @@
         <div class="balance-display" id="balanceDisplay" style="display: none;">
           💰 ₱<span id="headerBalance">0.00</span>
         </div>
+        <div class="profile-btn" id="locBtn" onclick="requestLocation()" title="Share location">📍</div>
         <div class="profile-btn" onclick="showProfileModal()" id="profileBtn">
           <span id="headerAvatar">👤</span>
         </div>
@@ -1079,6 +1081,21 @@
     </div>
     <div class="eta-banner" id="etaBanner">
       🕐 Arriving in ~25 minutes
+    </div>
+  </div>
+
+  <!-- Simplified Dashboard Tiles (integrated) -->
+  <div style="margin: 12px 15px;">
+    <div style="background:#fff; border-radius:12px; padding:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:12px;">
+      <div style="font-weight:700; color:#0a2a5e; margin-bottom:8px;">Live Bus Location</div>
+      <div style="color:#555; margin-bottom:10px;">Scan to register your ride. Scan the bus QR code inside the bus to view live bus locations.</div>
+      <a href="#" class="btn" onclick="showCameraScanner(); return false;">Scan Now</a>
+    </div>
+
+    <div style="background:#fff; border-radius:12px; padding:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <div style="font-weight:700; color:#0a2a5e; margin-bottom:8px;">Passenger Load</div>
+      <div style="color:#555; margin-bottom:10px;">Tap to refresh and view current passenger load for nearby buses.</div>
+      <a href="#" class="btn" onclick="showPassengerLoad(); return false;">Scan Now</a>
     </div>
   </div>
 
@@ -1326,6 +1343,21 @@
           <button class="btn-primary" onclick="simulateDriverScan()" style="background: #2ecc71;">✅ Simulate Driver Scan</button>
           <div style="font-size: 11px; color: #999; margin-top: 8px;">(For testing - driver will scan in production)</div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camera QR Scanner Modal -->
+  <div class="modal" id="cameraModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Scan Bus QR Code</div>
+        <button class="close-btn" onclick="stopCameraScanner();">×</button>
+      </div>
+      <div class="modal-body" style="text-align:center;">
+        <video id="qrVideo" autoplay playsinline style="width:100%; border-radius:12px; background:#000"></video>
+        <canvas id="qrCanvas" style="display:none;"></canvas>
+        <div style="margin-top:12px; color:#666;">Point your camera at the bus QR code</div>
       </div>
     </div>
   </div>
@@ -1870,6 +1902,103 @@
         calculateETA();
       }, 1000);
     }
+    // Camera-based QR scanner
+    let cameraStream = null;
+    let scanActive = false;
+
+    function showCameraScanner(){
+      const modal = document.getElementById('cameraModal');
+      if (modal) modal.classList.add('active');
+      startCameraScanner();
+    }
+
+    async function startCameraScanner(){
+      try {
+        const constraints = { video: { facingMode: 'environment' } };
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        const video = document.getElementById('qrVideo');
+        video.srcObject = cameraStream;
+        video.setAttribute('playsinline', true);
+        await video.play();
+        scanActive = true;
+        tickScan();
+      } catch (err) {
+        console.error('Camera start failed', err);
+        alert('Unable to access camera. Please allow camera permission.');
+        stopCameraScanner();
+      }
+    }
+
+    function stopCameraScanner(){
+      scanActive = false;
+      const video = document.getElementById('qrVideo');
+      if (video) {
+        video.pause();
+        video.srcObject = null;
+      }
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+      }
+      const modal = document.getElementById('cameraModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function tickScan(){
+      if (!scanActive) return;
+      const video = document.getElementById('qrVideo');
+      const canvas = document.getElementById('qrCanvas');
+      if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) {
+        requestAnimationFrame(tickScan);
+        return;
+      }
+
+      const w = video.videoWidth;
+      const h = video.videoHeight;
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, w, h);
+      const imageData = ctx.getImageData(0, 0, w, h);
+      try {
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        if (code) {
+          // Got QR result
+          handleScannedQRCode(code.data);
+          stopCameraScanner();
+          return;
+        }
+      } catch (e) {
+        console.error('QR decode error', e);
+      }
+
+      requestAnimationFrame(tickScan);
+    }
+
+    function handleScannedQRCode(data){
+      // Basic handling: show scanned data and set routeName/destination if present
+      console.log('Scanned QR:', data);
+      alert('Scanned: ' + data);
+      // If QR encodes busId or route info, try to parse simple formats
+      // Example formats handled: bus:BUS001  or route:Ortigas|Pasig City
+      if (data.startsWith('bus:')) {
+        const busId = data.split(':')[1];
+        document.getElementById('routeName').textContent = busId;
+        localStorage.setItem('lastScannedBus', busId);
+      } else if (data.startsWith('route:')) {
+        const parts = data.split(':')[1].split('|');
+        const route = parts[0] || 'Route';
+        const dest = parts[1] || '';
+        document.getElementById('routeName').textContent = route;
+        if (dest) document.getElementById('destination').textContent = dest;
+        localStorage.setItem('selectedRoute', route);
+        localStorage.setItem('userDestination', dest);
+      } else {
+        // fallback - place raw data
+        document.getElementById('routeName').textContent = data.substring(0,40);
+        localStorage.setItem('lastScannedRaw', data);
+      }
+    }
 
     function saveReceipt(receipt) {
       let receipts = JSON.parse(localStorage.getItem('userReceipts')) || [];
@@ -2149,20 +2278,85 @@
     }
 
     function calculateETA() {
-      const baseTime = 25;
-      const trafficFactor = Math.random() * 15;
-      const totalMinutes = Math.round(baseTime + trafficFactor);
-      
-      const etaTime = new Date();
-      etaTime.setMinutes(etaTime.getMinutes() + totalMinutes);
-      
-      const etaString = etaTime.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
-      
-      document.getElementById('etaBanner').textContent = `🕐 Arriving in ~${totalMinutes} min (${etaString})`;
-      document.getElementById('destination').textContent = userDestination;
+      const etaEl = document.getElementById('etaBanner');
+
+      // Require passenger location
+      const userLat = window.userLat || Number(localStorage.getItem('userLat'));
+      const userLng = window.userLng || Number(localStorage.getItem('userLng'));
+      if (!userLat || !userLng) {
+        if (etaEl) etaEl.textContent = '📍 Share your location to see ETA';
+        return;
+      }
+
+      // Fetch live buses from backend
+      try {
+        fetch('http://localhost:8000/buses')
+          .then(res => res.json())
+          .then(buses => {
+            // Filter buses with valid coords
+            const live = buses.filter(b => b.lat && b.lng);
+            if (!live || live.length === 0) {
+              if (etaEl) etaEl.textContent = '⏳ Waiting for driver GPS to be available...';
+              return;
+            }
+
+            // Helper: haversine distance in km
+            function haversine(lat1, lon1, lat2, lon2) {
+              function toRad(v){ return v * Math.PI / 180; }
+              const R = 6371; // km
+              const dLat = toRad(lat2 - lat1);
+              const dLon = toRad(lon2 - lon1);
+              const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+              return R * c;
+            }
+
+            // Find nearest live bus to user
+            let nearest = null;
+            let minDist = Infinity;
+            live.forEach(b => {
+              const d = haversine(userLat, userLng, Number(b.lat), Number(b.lng));
+              if (d < minDist) { minDist = d; nearest = b; }
+            });
+
+            if (!nearest) {
+              if (etaEl) etaEl.textContent = '⏳ Waiting for driver GPS to be available...';
+              return;
+            }
+
+            // Estimate ETA assuming average speed (km/h)
+            const avgSpeedKmh = 20; // conservative urban speed
+            const etaMinutes = Math.max(1, Math.round((minDist / avgSpeedKmh) * 60));
+            const etaTime = new Date();
+            etaTime.setMinutes(etaTime.getMinutes() + etaMinutes);
+
+            // Determine nearest station (predefined sample stations)
+            const stations = [
+              { name: 'EDSA-Cubao', lat: 14.6091, lng: 121.0223 },
+              { name: 'Commonwealth', lat: 14.6800, lng: 121.0700 },
+              { name: 'Katipunan', lat: 14.6350, lng: 121.0700 },
+              { name: 'Quezon City Terminal', lat: 14.6510, lng: 121.0500 }
+            ];
+
+            let nearestStation = stations[0];
+            let minStationDist = Infinity;
+            stations.forEach(s => {
+              const sd = haversine(userLat, userLng, s.lat, s.lng);
+              if (sd < minStationDist) { minStationDist = sd; nearestStation = s; }
+            });
+
+            const etaString = etaTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            if (etaEl) etaEl.textContent = `🕐 Arriving in ~${etaMinutes} min (${etaString}) — Alight near ${nearestStation.name}`;
+            document.getElementById('destination').textContent = userDestination || '—';
+          })
+          .catch(err => {
+            if (etaEl) etaEl.textContent = '⏳ Waiting for driver GPS to be available...';
+            console.error('ETA fetch error', err);
+          });
+      } catch (e) {
+        if (etaEl) etaEl.textContent = '⏳ Waiting for driver GPS to be available...';
+        console.error(e);
+      }
     }
 
     async function loadBuses() {
@@ -2259,6 +2453,71 @@
       document.getElementById('lowCapacity').textContent = data.filter(b => b.crowd_level === 'LOW').length;
       document.getElementById('moderateCapacity').textContent = data.filter(b => b.crowd_level === 'MODERATE').length;
       document.getElementById('highCapacity').textContent = data.filter(b => b.crowd_level === 'HIGH').length;
+    }
+
+    // Location / Route controls
+    function requestLocation(){
+      const btn = document.getElementById('locBtn');
+      if (btn) btn.textContent = '⏳';
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.');
+        if (btn) btn.textContent = '📍';
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(onLocationSuccess, onLocationError, { enableHighAccuracy: true, timeout: 10000 });
+    }
+
+    function onLocationSuccess(pos){
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      // Save user location for ETA calculations
+      window.userLat = lat;
+      window.userLng = lng;
+      localStorage.setItem('userLat', lat);
+      localStorage.setItem('userLng', lng);
+
+      // Simple feedback: show coordinates as detected destination
+      const destEl = document.getElementById('destination');
+      const routeName = document.getElementById('routeName');
+      if (destEl) destEl.textContent = `Detected: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      if (routeName) routeName.textContent = 'Nearby Route';
+      showRouteCard();
+      const btn = document.getElementById('locBtn'); if (btn) btn.textContent = '📍';
+
+      // Update ETA now that we have location
+      calculateETA();
+    }
+
+    function onLocationError(err){
+      const btn = document.getElementById('locBtn'); if (btn) btn.textContent = '📍';
+      if (err && err.code === 1) {
+        alert('Location permission denied. Allow location to see routes.');
+      } else {
+        alert('Unable to get location. ' + (err && err.message ? err.message : ''));
+      }
+    }
+
+    function showRouteCard(){
+      const rc = document.getElementById('routeCard');
+      const main = document.getElementById('mainContent');
+      if (rc) rc.classList.add('active');
+      if (main) { main.classList.remove('no-route'); main.classList.add('with-route'); }
+    }
+
+    function hideRouteCard(){
+      const rc = document.getElementById('routeCard');
+      const main = document.getElementById('mainContent');
+      if (rc) rc.classList.remove('active');
+      if (main) { main.classList.add('no-route'); main.classList.remove('with-route'); }
+    }
+
+    function showPassengerLoad(){
+      // Ensure user is logged in and has location (optional)
+      if (!isLoggedIn) { showLoginModal(); return; }
+      // Refresh buses and scroll to list
+      loadBuses();
+      const el = document.getElementById('busesList');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     // Initialize

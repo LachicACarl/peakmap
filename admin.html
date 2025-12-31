@@ -239,6 +239,79 @@
       font-weight: 700;
     }
 
+    /* Navbar (integrated from external snippet) */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #0a2a5e;
+      /* make navbar visually longer: extend to body edges and increase padding */
+      width: calc(100% + 40px);
+      margin: 0 -20px 20px;
+      padding: 1rem 2.5rem;
+      min-height: 64px;
+      color: #fff;
+      border-radius: 12px;
+    }
+
+    .navbar .brand {
+      font-weight: bold;
+      font-size: 1.4rem;
+      color: #fff;
+    }
+
+    .navbar .nav-links {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .navbar .nav-links a {
+      text-decoration: none;
+      color: #fff;
+      font-size: 1rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+      cursor: pointer;
+    }
+
+    .navbar .nav-links a:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .navbar .nav-links a.active {
+      background-color: #1e5aff;
+    }
+
+    .navbar .user {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+
+    .navbar .user-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: #fff;
+      color: #0a2a5e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    /* User dropdown styles */
+    .user-menu { position: relative; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+    .dropdown { position: absolute; right: 0; top: 44px; background-color: #fff; color: #333; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); width: 180px; display: none; flex-direction: column; overflow: hidden; z-index: 2000; }
+    .dropdown.show { display: flex; }
+    .dropdown-header { padding: 0.75rem; font-weight: bold; background-color: #f5f5f5; border-bottom: 1px solid #ddd; }
+    .dropdown a { padding: 0.6rem 0.75rem; text-decoration: none; color: #333; transition: background-color 0.2s ease; }
+    .dropdown a:hover { background-color: #eee; }
+
     .form-group {
       margin-bottom: 18px;
     }
@@ -1031,54 +1104,30 @@
   </div>
 
   <div class="container">
-    <header>
-      <h1>🛠 Admin Dashboard <span class="refresh-indicator">●</span></h1>
-      <div class="header-actions">
-        <div class="user-info" id="userInfo">
-          <div class="user-avatar" id="userAvatar">A</div>
-          <span id="userName">Admin</span>
-        </div>
-        <button class="logout-btn" id="logoutBtn" onclick="logout()">
-          🚪 Logout
-        </button>
+    <nav class="navbar">
+      <div class="brand">PeakMapPH</div>
+
+      <div class="nav-links">
+        <a id="overviewLink" class="active" onclick="switchView('overview')">Overview</a>
+        <a id="maintenanceLink" onclick="switchView('maintenance')">Maintenance</a>
       </div>
-    </header>
 
-    <!-- View Toggle -->
-    <div class="view-toggle">
-      <button class="view-btn" id="analyticsViewBtn" onclick="switchView('analytics')">
-        📊 Analytics
-      </button>
-      <button class="view-btn" id="maintenanceViewBtn" onclick="switchView('maintenance')">
-        🔧 Maintenance
-      </button>
-    </div>
+      <div class="user">
+          <div class="user-menu" id="userMenu" onclick="toggleDropdown(event)">
+          <div class="user-icon user-avatar" id="userAvatar">A</div>
+          <div class="dropdown" id="dropdownMenu">
+            <div class="dropdown-header" id="dropdownHeader">Hi Admin!</div>
+              <a href="#" id="profileLink" onclick="openProfile()">Profile</a>
+            <a href="#" id="dropdownLogout" onclick="logout()">Logout</a>
+                </div>
+                </div>
+              </nav>
 
-    <!-- Fleet Status View -->
-    <div class="fleet-view" id="fleetView">
-    <div class="card">
-      <table>
-        <thead>
-          <tr>
-            <th>🚌 Bus ID</th>
-            <th>👥 Passengers</th>
-            <th>📊 Crowd Level</th>
-            <th>🕒 Last Update</th>
-          </tr>
-        </thead>
-        <tbody id="busData">
-          <tr>
-            <td colspan="4" class="no-data">Loading data...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    </div>
-
+    <!-- Fleet Status View removed -->
     <!-- Analytics Dashboard View -->
     <div class="analytics-dashboard" id="analyticsView">
       <section class="map-section">
-        <div class="map-title">🗺️ Real-Time Bus Tracking</div>
+        <div class="map-title">Real-Time Bus Tracking</div>
         <div class="map-placeholder">
           <div id="busMap"></div>
         </div>
@@ -1114,6 +1163,13 @@
           <div class="trend-label">
             <span>Last 7 days average</span>
             <span class="status">Low – Optimal</span>
+          </div>
+        </div>
+
+        <div class="analytics-section">
+          <h3>Payment Summary</h3>
+          <div id="paymentSummary">
+            <div class="empty-data">No payment data available.</div>
           </div>
         </div>
 
@@ -1244,6 +1300,61 @@
     </div>
   </div>
 
+  <!-- Profile Edit Modal -->
+  <div class="login-modal" id="profileModal" style="display:none;">
+    <div class="modal-content">
+      <h2>Edit Profile</h2>
+      <form id="profileForm" onsubmit="saveProfile(event)" novalidate>
+        <div class="form-group">
+          <label for="profileFullName">Full Name</label>
+          <input type="text" id="profileFullName" name="profileFullName" required />
+          <span class="error" id="err-profileFullName"></span>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="profileBirthDate">Birth Date</label>
+            <input type="date" id="profileBirthDate" name="profileBirthDate" />
+            <span class="error" id="err-profileBirthDate"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="profileContact">Contact Number</label>
+            <input type="tel" id="profileContact" name="profileContact" />
+            <span class="error" id="err-profileContact"></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="profileEmail">Email Address</label>
+          <input type="email" id="profileEmail" name="profileEmail" />
+          <span class="error" id="err-profileEmail"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="profileRole">Role</label>
+          <select id="profileRole" name="profileRole">
+            <option value="ADMIN">ADMIN</option>
+            <option value="DISPATCHER">DISPATCHER</option>
+            <option value="OPERATOR">OPERATOR</option>
+            <option value="ANALYST">ANALYST</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="profileUsername">Username (read-only)</label>
+          <input type="text" id="profileUsername" name="profileUsername" readonly />
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="submit-btn">Save</button>
+          <button type="button" class="cancel-btn" onclick="closeProfile()">Cancel</button>
+        </div>
+        <p id="profile-status" class="status"></p>
+      </form>
+    </div>
+  </div>
+
 
 
   <script>
@@ -1283,7 +1394,7 @@
         document.getElementById('loginPage').classList.add('hidden');
         updateUIForAuth();
         loadData();
-        switchView('analytics');
+        switchView('overview');
       } else {
         document.getElementById('loginPage').classList.remove('hidden');
       }
@@ -1494,23 +1605,29 @@
       const fleetView = document.getElementById('fleetView');
       const analyticsView = document.getElementById('analyticsView');
       const maintenanceView = document.getElementById('maintenanceView');
-      const analyticsBtn = document.getElementById('analyticsViewBtn');
-      const maintenanceBtn = document.getElementById('maintenanceViewBtn');
+      const overviewLink = document.getElementById('overviewLink');
+      const maintenanceLink = document.getElementById('maintenanceLink');
 
-      // Hide all views
-      fleetView.classList.add('hidden');
-      analyticsView.classList.remove('active');
-      maintenanceView.classList.remove('active');
-      analyticsBtn.classList.remove('active');
-      maintenanceBtn.classList.remove('active');
+      // Hide all views (guard in case some were removed)
+      if (fleetView) fleetView.classList.add('hidden');
+      if (analyticsView) analyticsView.classList.remove('active');
+      if (maintenanceView) maintenanceView.classList.remove('active');
+      if (overviewLink) overviewLink.classList.remove('active');
+      if (maintenanceLink) maintenanceLink.classList.remove('active');
+
+      // accept 'overview' as alias for analytics
+      if (view === 'overview') view = 'analytics';
 
       if (view === 'analytics') {
-        analyticsView.classList.add('active');
-        analyticsBtn.classList.add('active');
-        loadAnalytics();
+        if (analyticsView) analyticsView.classList.add('active');
+        if (overviewLink) overviewLink.classList.add('active');
+        // Delay loading analytics slightly so the container becomes visible before Leaflet initializes
+        setTimeout(() => {
+          loadAnalytics();
+        }, 60);
       } else if (view === 'maintenance') {
-        maintenanceView.classList.add('active');
-        maintenanceBtn.classList.add('active');
+        if (maintenanceView) maintenanceView.classList.add('active');
+        if (maintenanceLink) maintenanceLink.classList.add('active');
         loadMaintenanceData();
       }
     }
@@ -1737,53 +1854,185 @@
       location.reload();
     }
 
+    // User dropdown toggle
+    function toggleDropdown(event) {
+      event.stopPropagation();
+      const dd = document.getElementById('dropdownMenu');
+      const header = document.getElementById('dropdownHeader');
+      const fullName = localStorage.getItem('adminFullName') || localStorage.getItem('adminUsername') || 'Admin';
+      const displayName = fullName.split(' (')[0];
+      if (header) header.textContent = `Hi ${displayName}!`;
+      if (dd) dd.classList.toggle('show');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const dd = document.getElementById('dropdownMenu');
+      if (!e.target.closest || !dd) return;
+      if (!e.target.closest('.user-menu')) {
+        dd.classList.remove('show');
+      }
+    });
+
     function updateUIForAuth() {
-      const userInfo = document.getElementById('userInfo');
-      const userName = document.getElementById('userName');
       const userAvatar = document.getElementById('userAvatar');
+      const dropdownHeader = document.getElementById('dropdownHeader');
 
       const username = localStorage.getItem('adminUsername') || 'Admin';
       const fullName = localStorage.getItem('adminFullName') || username;
       const role = localStorage.getItem('adminRole') || 'ADMIN';
-      
-      userName.textContent = `${fullName} (${role})`;
-      userAvatar.textContent = username.charAt(0).toUpperCase();
+
+      // Update avatar and dropdown header (span `userName` was removed)
+      if (dropdownHeader) dropdownHeader.textContent = `${fullName} (${role})`;
+      if (userAvatar) userAvatar.textContent = username.charAt(0).toUpperCase();
+    }
+
+    // Open profile modal and populate fields
+    function openProfile(){
+      const modal = document.getElementById('profileModal');
+      const username = localStorage.getItem('adminUsername') || '';
+      const fullName = localStorage.getItem('adminFullName') || '';
+      const email = localStorage.getItem('adminEmail') || '';
+      const role = localStorage.getItem('adminRole') || 'ADMIN';
+      const contact = localStorage.getItem('adminContact') || '';
+      const birth = localStorage.getItem('adminBirthDate') || '';
+
+      document.getElementById('profileUsername').value = username;
+      document.getElementById('profileFullName').value = fullName;
+      document.getElementById('profileEmail').value = email;
+      document.getElementById('profileRole').value = role;
+      document.getElementById('profileContact').value = contact;
+      document.getElementById('profileBirthDate').value = birth;
+
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeProfile(){
+      const modal = document.getElementById('profileModal');
+      if (modal) modal.style.display = 'none';
+      document.getElementById('profile-status').textContent = '';
+    }
+
+    function saveProfile(e){
+      e.preventDefault();
+      const username = document.getElementById('profileUsername').value.trim();
+      const fullName = document.getElementById('profileFullName').value.trim();
+      const email = document.getElementById('profileEmail').value.trim();
+      const role = document.getElementById('profileRole').value;
+      const contact = document.getElementById('profileContact').value.trim();
+      const birth = document.getElementById('profileBirthDate').value;
+
+      if (!fullName) {
+        setError('err-profileFullName', 'Full name is required.');
+        return;
+      } else { setError('err-profileFullName',''); }
+
+      // Update registeredAdmins array
+      const registeredAdmins = JSON.parse(localStorage.getItem('registeredAdmins') || '[]');
+      const idx = registeredAdmins.findIndex(a => a.username === username);
+      if (idx !== -1) {
+        registeredAdmins[idx].fullName = fullName;
+        registeredAdmins[idx].email = email;
+        registeredAdmins[idx].role = role;
+        registeredAdmins[idx].contactNumber = contact;
+        registeredAdmins[idx].birthDate = birth;
+        localStorage.setItem('registeredAdmins', JSON.stringify(registeredAdmins));
+      }
+
+      // Update session/local copies
+      localStorage.setItem('adminFullName', fullName);
+      localStorage.setItem('adminEmail', email);
+      localStorage.setItem('adminRole', role);
+      localStorage.setItem('adminContact', contact);
+      localStorage.setItem('adminBirthDate', birth);
+
+      document.getElementById('profile-status').textContent = '✓ Profile saved.';
+      document.getElementById('profile-status').className = 'status success';
+
+      // Refresh UI
+      updateUIForAuth();
+      loadMaintenanceData();
+
+      setTimeout(() => {
+        closeProfile();
+      }, 800);
     }
 
     function loadData() {
-      // Load sample bus data (no backend needed)
-      const sampleBuses = [
-        { bus_id: 'BUS001', count: 35, crowd_level: 'LOW', timestamp: new Date().toISOString() },
-        { bus_id: 'BUS002', count: 42, crowd_level: 'MODERATE', timestamp: new Date().toISOString() },
-        { bus_id: 'BUS003', count: 15, crowd_level: 'LOW', timestamp: new Date().toISOString() },
-        { bus_id: 'BUS004', count: 48, crowd_level: 'HIGH', timestamp: new Date().toISOString() }
+      // Fleet data removed — no sample bus data
+      // Fleet data removed — populate payment summary from driver-submitted localStorage 'payments'
+      const storedPayments = JSON.parse(localStorage.getItem('payments') || 'null');
+      // fallback sample values if none exist
+      const fallbackPayments = [
+        { busId: 'BUS001', cash: 1200, card: 800, ewallet: 400 },
+        { busId: 'BUS002', cash: 900, card: 1200, ewallet: 600 },
+        { busId: 'BUS003', cash: 400, card: 300, ewallet: 150 },
+        { busId: 'BUS004', cash: 1500, card: 700, ewallet: 350 }
       ];
 
-      const table = document.getElementById('busData');
-      table.innerHTML = "";
+      const allPayments = (Array.isArray(storedPayments) && storedPayments.length) ? storedPayments : fallbackPayments;
 
-      // Calculate statistics
-      let totalPassengers = 0;
-      let highCapacity = 0;
-
-      sampleBuses.forEach(bus => {
-        totalPassengers += bus.count;
-        if (bus.crowd_level === 'HIGH') highCapacity++;
-
-        table.innerHTML += `
-          <tr>
-            <td><strong>${bus.bus_id}</strong></td>
-            <td>${bus.count}</td>
-            <td><span class="badge ${bus.crowd_level}">${bus.crowd_level}</span></td>
-            <td class="timestamp">${new Date(bus.timestamp).toLocaleString()}</td>
-          </tr>
-        `;
+      // Aggregate payments per busId
+      const agg = {};
+      allPayments.forEach(p => {
+        const id = (p.busId || 'UNKNOWN').toString();
+        if (!agg[id]) agg[id] = { busId: id, cash: 0, card: 0, ewallet: 0 };
+        agg[id].cash += Number(p.cash || 0);
+        agg[id].card += Number(p.card || 0);
+        agg[id].ewallet += Number(p.ewallet || 0);
       });
 
-      // Update statistics
-      document.getElementById('totalBuses').textContent = sampleBuses.length;
-      document.getElementById('totalPassengers').textContent = totalPassengers;
-      document.getElementById('highCapacity').textContent = highCapacity;
+      const paymentsByBus = Object.values(agg);
+
+      function formatCurrency(n){
+        try { return n.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' }); }
+        catch(e){ return '₱' + Number(n).toFixed(2); }
+      }
+
+      const paymentContainer = document.getElementById('paymentSummary');
+      if (paymentContainer) {
+        if (paymentsByBus.length === 0) {
+          paymentContainer.innerHTML = '<div class="empty-data">No payment data available.</div>';
+        } else {
+          let overallTotal = 0;
+          let rows = `
+            <table class="maintenance-table" style="margin:0;">
+              <thead>
+                <tr>
+                  <th>Bus ID</th>
+                  <th>Cash</th>
+                  <th>Card</th>
+                  <th>E-Wallet</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>`;
+
+          paymentsByBus.forEach(p => {
+            const total = (p.cash||0) + (p.card||0) + (p.ewallet||0);
+            overallTotal += total;
+            rows += `
+              <tr>
+                <td><strong>${p.busId}</strong></td>
+                <td>${formatCurrency(p.cash)}</td>
+                <td>${formatCurrency(p.card)}</td>
+                <td>${formatCurrency(p.ewallet)}</td>
+                <td>${formatCurrency(total)}</td>
+              </tr>`;
+          });
+
+          rows += `</tbody>
+            <tfoot>
+              <tr>
+                <th colspan="4">Overall Total</th>
+                <th>${formatCurrency(overallTotal)}</th>
+              </tr>
+            </tfoot>
+            </table>`;
+
+          paymentContainer.innerHTML = rows;
+        }
+      }
     }
   </script>
 </body>
